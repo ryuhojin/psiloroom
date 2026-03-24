@@ -1,0 +1,312 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AffiliationType {
+  CUSTOMER
+  DELIVERY
+  OUTSOURCING
+}
+
+enum AccountStatus {
+  ACTIVE
+  LOCKED
+  DISABLED
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  CLOSED
+}
+
+enum ChatRoomType {
+  DM
+  GROUP
+  PROJECT
+}
+
+enum NoticeSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum CalendarScope {
+  PERSONAL
+  GROUP
+  PROJECT
+}
+
+model Tenant {
+  id          String       @id @default(uuid())
+  code        String       @unique
+  name        String
+  departments Department[]
+  accounts    Account[]
+  projects    Project[]
+  notices     Notice[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Department {
+  id        String    @id @default(uuid())
+  tenantId  String
+  name      String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accounts  Account[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Account {
+  id              String             @id @default(uuid())
+  tenantId        String
+  departmentId    String
+  loginId         String
+  passwordHash    String
+  displayName     String
+  affiliationType AffiliationType
+  status          AccountStatus      @default(ACTIVE)
+  tokenVersion    Int                @default(1)
+  globalRoles     String[]           @default([])
+  isExternal      Boolean            @default(false)
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department      Department         @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  projectMembers  ProjectMember[]
+  chatMembers     ChatMember[]
+  noticesRead     NoticeReadReceipt[]
+  chatsRead       ChatReadReceipt[]
+  eventAttendees  EventAttendee[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@unique([tenantId, loginId])
+}
+
+model Project {
+  id          String                 @id @default(uuid())
+  tenantId    String
+  code        String                 @unique
+  name        String
+  status      ProjectStatus          @default(PLANNING)
+  tenant      Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  members     ProjectMember[]
+  roles       ProjectRole[]
+  notices     Notice[]
+  rooms       ChatRoom[]
+  calendars   Calendar[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+}
+
+model Permission {
+  id          String                  @id @default(uuid())
+  key         String                  @unique
+  description String
+  roleLinks   ProjectRolePermission[]
+  overrides   ProjectMemberPermissionOverride[]
+  createdAt   DateTime                @default(now())
+}
+
+model ProjectRole {
+  id          String                  @id @default(uuid())
+  projectId   String
+  name        String
+  project     Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  permissions ProjectRolePermission[]
+  members     ProjectMember[]
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+}
+
+model ProjectRolePermission {
+  id           String      @id @default(uuid())
+  projectRoleId String
+  permissionId String
+  projectRole  ProjectRole @relation(fields: [projectRoleId], references: [id], onDelete: Cascade)
+  permission   Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([projectRoleId, permissionId])
+}
+
+model ProjectMember {
+  id          String                           @id @default(uuid())
+  projectId   String
+  accountId   String
+  projectRoleId String?
+  project     Project                          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  account     Account                          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  projectRole ProjectRole?                     @relation(fields: [projectRoleId], references: [id], onDelete: SetNull)
+  overrides   ProjectMemberPermissionOverride[]
+  createdAt   DateTime                         @default(now())
+
+  @@unique([projectId, accountId])
+}
+
+model ProjectMemberPermissionOverride {
+  id              String        @id @default(uuid())
+  projectMemberId String
+  permissionId    String
+  allowed         Boolean
+  projectMember   ProjectMember @relation(fields: [projectMemberId], references: [id], onDelete: Cascade)
+  permission      Permission    @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([projectMemberId, permissionId])
+}
+
+model Calendar {
+  id        String          @id @default(uuid())
+  projectId String?
+  scope     CalendarScope
+  title     String
+  project   Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  events    CalendarEvent[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model CalendarEvent {
+  id          String            @id @default(uuid())
+  calendarId  String
+  title       String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime
+  calendar    Calendar          @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  attendees   EventAttendee[]
+  targets     EventShareTarget[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model EventAttendee {
+  id              String        @id @default(uuid())
+  calendarEventId String
+  accountId       String
+  calendarEvent   CalendarEvent @relation(fields: [calendarEventId], references: [id], onDelete: Cascade)
+  account         Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([calendarEventId, accountId])
+}
+
+model EventShareTarget {
+  id              String        @id @default(uuid())
+  calendarEventId String
+  targetType      String
+  targetId        String
+  calendarEvent   CalendarEvent @relation(fields: [calendarEventId], references: [id], onDelete: Cascade)
+}
+
+model ChatRoom {
+  id          String            @id @default(uuid())
+  projectId   String?
+  type        ChatRoomType
+  name        String
+  project     Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  members     ChatMember[]
+  messages    ChatMessage[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model ChatMember {
+  id         String            @id @default(uuid())
+  chatRoomId String
+  accountId  String
+  chatRoom   ChatRoom          @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  account    Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  reads      ChatReadReceipt[]
+
+  @@unique([chatRoomId, accountId])
+}
+
+model ChatMessage {
+  id         String            @id @default(uuid())
+  chatRoomId String
+  authorId   String
+  body       String
+  chatRoom   ChatRoom          @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  reads      ChatReadReceipt[]
+  createdAt  DateTime          @default(now())
+}
+
+model ChatReadReceipt {
+  id            String      @id @default(uuid())
+  chatMessageId String
+  chatMemberId  String
+  accountId     String
+  readAt        DateTime
+  chatMessage   ChatMessage @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+  chatMember    ChatMember  @relation(fields: [chatMemberId], references: [id], onDelete: Cascade)
+  account       Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([chatMessageId, accountId])
+}
+
+model Notice {
+  id          String              @id @default(uuid())
+  tenantId    String
+  projectId   String?
+  title       String
+  body        String
+  severity    NoticeSeverity      @default(INFO)
+  tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project     Project?            @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  targets     NoticeTarget[]
+  reads       NoticeReadReceipt[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model NoticeTarget {
+  id        String  @id @default(uuid())
+  noticeId  String
+  targetType String
+  targetId  String
+  notice    Notice  @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+}
+
+model NoticeReadReceipt {
+  id        String   @id @default(uuid())
+  noticeId  String
+  accountId String
+  readAt    DateTime
+  notice    Notice   @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([noticeId, accountId])
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  accountId   String
+  eventKey    String
+  payloadJson Json
+  deliveredAt DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String?
+  action      String
+  entityType  String
+  entityId    String
+  payloadJson Json?
+  createdAt   DateTime @default(now())
+}
+
+model OutboxEvent {
+  id          String   @id @default(uuid())
+  topic       String
+  payloadJson Json
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+}

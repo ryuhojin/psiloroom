@@ -1,0 +1,195 @@
+:root {
+  color-scheme: light;
+  --bg: #f5ebd9;
+  --bg-accent: #f97316;
+  --panel: rgba(255, 252, 247, 0.88);
+  --panel-strong: rgba(255, 247, 237, 0.98);
+  --line: rgba(15, 23, 42, 0.12);
+  --text: #172033;
+  --muted: #5f6d83;
+  --signal: #b45309;
+  --success: #0f766e;
+  --shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+  font-synthesis-weight: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.2), transparent 32%),
+    radial-gradient(circle at top right, rgba(13, 148, 136, 0.12), transparent 24%),
+    linear-gradient(180deg, #fff7ed 0%, var(--bg) 100%);
+  font-family: "Avenir Next", "Pretendard", "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.portal-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  padding: 28px;
+  background: linear-gradient(180deg, rgba(23, 32, 51, 0.95), rgba(15, 23, 42, 0.9));
+  color: white;
+  display: grid;
+  gap: 28px;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 12px;
+}
+
+.sidebar a {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar small {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.content {
+  padding: 40px;
+  display: grid;
+  gap: 24px;
+}
+
+.hero-panel,
+.list-panel {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.grid-2 {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metric-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(180, 83, 9, 0.1);
+  color: var(--signal);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.login-grid {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 440px);
+  gap: 24px;
+  padding: 32px;
+}
+
+.login-copy,
+.login-panel {
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+
+.login-copy {
+  padding: 40px;
+  background:
+    linear-gradient(135deg, rgba(23, 32, 51, 0.92), rgba(15, 118, 110, 0.74)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+  color: white;
+  display: grid;
+  gap: 18px;
+  align-content: end;
+}
+
+.login-panel {
+  padding: 32px;
+  background: var(--panel-strong);
+}
+
+.login-panel form {
+  display: grid;
+  gap: 16px;
+}
+
+.login-panel label {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.login-panel input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: white;
+}
+
+.login-panel button {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(90deg, #f97316, #ea580c);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.table-list {
+  display: grid;
+  gap: 12px;
+}
+
+.table-item {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+@media (max-width: 960px) {
+  .portal-shell,
+  .login-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-grid,
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,102 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-psilo}
+      POSTGRES_USER: ${POSTGRES_USER:-psilo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-psilo}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-psilo} -d ${POSTGRES_DB:-psilo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  admin-api:
+    build:
+      context: .
+      dockerfile: infra/docker/workspace.Dockerfile
+    command: pnpm --filter admin-api start:dev
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://psilo:psilo@postgres:5432/psilo?schema=public}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      PORT: ${ADMIN_API_PORT:-4000}
+    ports:
+      - "${ADMIN_API_PORT:-4000}:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  user-api:
+    build:
+      context: .
+      dockerfile: infra/docker/workspace.Dockerfile
+    command: pnpm --filter user-api start:dev
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://psilo:psilo@postgres:5432/psilo?schema=public}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      PORT: ${USER_API_PORT:-4001}
+    ports:
+      - "${USER_API_PORT:-4001}:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  admin-web:
+    build:
+      context: .
+      dockerfile: infra/docker/workspace.Dockerfile
+    command: pnpm --filter admin-web dev
+    environment:
+      PORT: ${ADMIN_WEB_PORT:-3000}
+      ADMIN_API_BASE_URL: http://admin-api:4000/api/admin
+    ports:
+      - "${ADMIN_WEB_PORT:-3000}:3000"
+    depends_on:
+      admin-api:
+        condition: service_started
+
+  user-web:
+    build:
+      context: .
+      dockerfile: infra/docker/workspace.Dockerfile
+    command: pnpm --filter user-web dev
+    environment:
+      PORT: ${USER_WEB_PORT:-3001}
+      USER_API_BASE_URL: http://user-api:4001/api/user
+    ports:
+      - "${USER_WEB_PORT:-3001}:3001"
+    depends_on:
+      user-api:
+        condition: service_started
+
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/workspace.Dockerfile
+    command: pnpm --filter worker dev
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://psilo:psilo@postgres:5432/psilo?schema=public}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
