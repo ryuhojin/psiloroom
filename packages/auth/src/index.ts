@@ -1,6 +1,7 @@
 import { createHmac, scryptSync, timingSafeEqual } from "node:crypto";
 
 export type SessionSurface = "admin" | "user";
+export type SessionTokenType = "access" | "refresh";
 export type SessionRole = "tenant_admin" | "super_admin" | "project_manager" | "project_member";
 
 export interface SessionTokenPayload {
@@ -11,6 +12,7 @@ export interface SessionTokenPayload {
   sessionId: string;
   tokenVersion: number;
   surface: SessionSurface;
+  tokenType: SessionTokenType;
   roles: SessionRole[];
   projectIds: string[];
   iat: number;

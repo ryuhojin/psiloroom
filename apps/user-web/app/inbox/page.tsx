@@ -2,8 +2,8 @@ import { UserInboxOverview } from "../../src/components/user-inbox-overview";
 import { UserShell } from "../../src/components/user-shell";
 import { requireUserSession } from "../../src/lib/user-session";
 
-export default function InboxPage() {
-  requireUserSession("/inbox");
+export default async function InboxPage() {
+  await requireUserSession("/inbox");
 
   return (
     <UserShell

@@ -1,3 +1,4 @@
+import { Inject } from "@nestjs/common";
 import {
   ConnectedSocket,
   MessageBody,
@@ -10,6 +11,7 @@ import {
 import { verifySessionToken } from "@psilo/auth";
 import type { Server, Socket } from "socket.io";
 
+import { USER_REPOSITORY, type UserRepository } from "../../data/user-repository";
 import { ProjectSubscribeDto } from "./dto/project-subscribe.dto";
 
 type AuthenticatedSocket = Socket & {
@@ -25,6 +27,10 @@ type AuthenticatedSocket = Socket & {
   },
 })
 export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
+  constructor(
+    @Inject(USER_REPOSITORY) private readonly userRepository: UserRepository,
+  ) {}
+
   @WebSocketServer()
   server!: Server;
 
@@ -41,7 +47,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
 
         const session = verifySessionToken(token);
 
-        if (session.surface !== "user") {
+        if (session.surface !== "user" || session.tokenType !== "access") {
           throw new Error("Invalid surface");
         }
 
@@ -61,14 +67,45 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
   }
 
   @SubscribeMessage("project.subscribe")
-  handleProjectSubscribe(
+  async handleProjectSubscribe(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() payload: ProjectSubscribeDto,
   ) {
-    if (!client.data.session?.projectIds.includes(payload.projectId)) {
+    const session = client.data.session;
+
+    if (!session) {
+      client.emit("subscription.denied", {
+        projectId: payload.projectId,
+        reason: "unauthorized",
+      });
+      return;
+    }
+
+    const isMember = await this.userRepository.isProjectMember(
+      session.sub,
+      session.tenantId,
+      payload.projectId,
+    );
+
+    if (!isMember) {
       client.emit("subscription.denied", {
         projectId: payload.projectId,
         reason: "project-member-required",
+      });
+      return;
+    }
+
+    const hasChatReadPermission = await this.userRepository.hasProjectPermission(
+      session.sub,
+      session.tenantId,
+      payload.projectId,
+      "chat.message.read",
+    );
+
+    if (!hasChatReadPermission) {
+      client.emit("subscription.denied", {
+        projectId: payload.projectId,
+        reason: "chat-read-permission-required",
       });
       return;
     }

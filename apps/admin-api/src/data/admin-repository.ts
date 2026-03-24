@@ -29,6 +29,7 @@ export interface AdminProjectRecord {
 
 export interface AdminRepository {
   findAdminAccountByTenantCode(tenantCode: string, loginId: string): Promise<AdminAccountRecord | null>;
+  findAdminAccountById(accountId: string): Promise<AdminAccountRecord | null>;
   listTenantsForTenant(tenantId: string, includeAll: boolean): Promise<AdminTenantRecord[]>;
   listProjectsByTenant(tenantId: string): Promise<AdminProjectRecord[]>;
 }

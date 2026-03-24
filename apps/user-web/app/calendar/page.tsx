@@ -7,8 +7,8 @@ const events = [
   { title: "Client review", scope: "PERSONAL", time: "16:00 - 17:00" },
 ];
 
-export default function CalendarPage() {
-  requireUserSession("/calendar");
+export default async function CalendarPage() {
+  await requireUserSession("/calendar");
 
   return (
     <UserShell

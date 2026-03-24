@@ -2,8 +2,8 @@ import { AdminDashboardOverview } from "../../src/components/admin-dashboard-ove
 import { AdminShell } from "../../src/components/admin-shell";
 import { requireAdminSession } from "../../src/lib/admin-session";
 
-export default function DashboardPage() {
-  requireAdminSession("/dashboard");
+export default async function DashboardPage() {
+  await requireAdminSession("/dashboard");
 
   return (
     <AdminShell

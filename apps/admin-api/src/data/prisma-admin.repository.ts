@@ -10,6 +10,45 @@ import type {
 
 @Injectable()
 export class PrismaAdminRepository implements AdminRepository {
+  async findAdminAccountById(accountId: string): Promise<AdminAccountRecord | null> {
+    const account = await prisma.account.findUnique({
+      where: {
+        id: accountId,
+      },
+      select: {
+        id: true,
+        loginId: true,
+        passwordHash: true,
+        tokenVersion: true,
+        status: true,
+        globalRoles: true,
+        displayName: true,
+        tenantId: true,
+        tenant: {
+          select: {
+            code: true,
+          },
+        },
+      },
+    });
+
+    if (!account) {
+      return null;
+    }
+
+    return {
+      id: account.id,
+      tenantId: account.tenantId,
+      tenantCode: account.tenant.code,
+      loginId: account.loginId,
+      displayName: account.displayName,
+      passwordHash: account.passwordHash,
+      roles: account.globalRoles,
+      status: account.status,
+      tokenVersion: account.tokenVersion,
+    };
+  }
+
   async findAdminAccountByTenantCode(
     tenantCode: string,
     loginId: string,

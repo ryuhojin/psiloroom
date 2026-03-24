@@ -8,8 +8,8 @@ const permissionRows = [
   { scope: "Project", key: "calendar.manage", description: "일정 생성과 수정" },
 ];
 
-export default function PermissionsPage() {
-  requireAdminSession("/permissions");
+export default async function PermissionsPage() {
+  await requireAdminSession("/permissions");
 
   return (
     <AdminShell

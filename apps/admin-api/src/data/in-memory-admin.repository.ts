@@ -16,6 +16,10 @@ export class InMemoryAdminRepository implements AdminRepository {
     );
   }
 
+  async findAdminAccountById(accountId: string): Promise<AdminAccountRecord | null> {
+    return mockAdminAccounts.find((candidate) => candidate.id === accountId) ?? null;
+  }
+
   async listTenantsForTenant(tenantId: string, includeAll: boolean): Promise<AdminTenantRecord[]> {
     if (includeAll) {
       return mockTenants;

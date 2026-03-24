@@ -3,8 +3,8 @@ import { mockProjects } from "@psilo/contracts";
 import { AdminShell } from "../../src/components/admin-shell";
 import { requireAdminSession } from "../../src/lib/admin-session";
 
-export default function ProjectsPage() {
-  requireAdminSession("/projects");
+export default async function ProjectsPage() {
+  await requireAdminSession("/projects");
 
   return (
     <AdminShell

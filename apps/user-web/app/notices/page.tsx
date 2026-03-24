@@ -3,8 +3,8 @@ import { mockNotices } from "@psilo/contracts";
 import { UserShell } from "../../src/components/user-shell";
 import { requireUserSession } from "../../src/lib/user-session";
 
-export default function NoticesPage() {
-  requireUserSession("/notices");
+export default async function NoticesPage() {
+  await requireUserSession("/notices");
 
   return (
     <UserShell

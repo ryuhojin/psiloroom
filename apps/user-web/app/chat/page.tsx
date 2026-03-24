@@ -7,8 +7,8 @@ const rooms = [
   { name: "Direct Message", detail: "PM Alpha / 1 unread" },
 ];
 
-export default function ChatPage() {
-  requireUserSession("/chat");
+export default async function ChatPage() {
+  await requireUserSession("/chat");
 
   return (
     <UserShell

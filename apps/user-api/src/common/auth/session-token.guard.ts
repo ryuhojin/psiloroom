@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -18,7 +19,7 @@ type AuthenticatedRequest = {
 
 @Injectable()
 export class SessionTokenGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(@Inject(Reflector) private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext) {
     if (context.getType() !== "http") {
@@ -44,7 +45,7 @@ export class SessionTokenGuard implements CanActivate {
     try {
       const payload = verifySessionToken(header.slice("Bearer ".length));
 
-      if (payload.surface !== "user") {
+      if (payload.surface !== "user" || payload.tokenType !== "access") {
         throw new Error("Invalid surface");
       }
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from "@nestjs/common";
+import { Controller, Get, Inject, Query } from "@nestjs/common";
 import type { SessionTokenPayload } from "@psilo/auth";
 
 import { CurrentSession } from "../../common/auth/current-session.decorator";
@@ -7,7 +7,7 @@ import { ProjectsService } from "./projects.service";
 
 @Controller("projects")
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(@Inject(ProjectsService) private readonly projectsService: ProjectsService) {}
 
   @Get()
   async getProjects(

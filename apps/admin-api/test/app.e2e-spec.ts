@@ -8,6 +8,7 @@ import { AppModule } from "../src/app.module";
 describe("Admin API", () => {
   let app: INestApplication;
   let adminToken: string;
+  let adminRefreshToken: string;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -62,10 +63,40 @@ describe("Admin API", () => {
       .expect(201);
 
     adminToken = response.body.accessToken;
+    adminRefreshToken = response.body.refreshToken;
     expect(response.body.accessToken).toEqual(expect.any(String));
     expect(response.body.refreshToken).toEqual(expect.any(String));
     expect(response.body.user.tenantId).toBe("tenant-alpha");
     expect(response.body.user.roles).toContain("tenant_admin");
+  });
+
+  it("returns the current session for a valid access token", async () => {
+    const response = await request(app.getHttpServer())
+      .get("/api/admin/auth/session")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .expect(200);
+
+    expect(response.body.user.loginId).toBe("pm.alpha");
+    expect(response.body.session.tokenType).toBe("access");
+    expect(response.body.session.roles).toContain("tenant_admin");
+  });
+
+  it("issues a fresh token pair from the refresh endpoint", async () => {
+    const response = await request(app.getHttpServer())
+      .post("/api/admin/auth/refresh")
+      .send({ refreshToken: adminRefreshToken })
+      .expect(201);
+
+    expect(response.body.accessToken).toEqual(expect.any(String));
+    expect(response.body.refreshToken).toEqual(expect.any(String));
+    expect(response.body.user.loginId).toBe("pm.alpha");
+  });
+
+  it("rejects access tokens on the refresh endpoint", async () => {
+    await request(app.getHttpServer())
+      .post("/api/admin/auth/refresh")
+      .send({ refreshToken: adminToken })
+      .expect(401);
   });
 
   it("rejects tenant lookup without authentication", async () => {
@@ -80,6 +111,13 @@ describe("Admin API", () => {
 
     expect(response.body).toHaveLength(1);
     expect(response.body[0].code).toBe("ALPHA");
+  });
+
+  it("rejects refresh tokens on protected endpoints", async () => {
+    await request(app.getHttpServer())
+      .get("/api/admin/tenants")
+      .set("Authorization", `Bearer ${adminRefreshToken}`)
+      .expect(401);
   });
 
   it("rejects cross-tenant project access", async () => {
